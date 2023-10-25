@@ -14,7 +14,7 @@ public class DeviceController {
     @PostMapping(value = "/set/color", produces = "application/json")
     public ResponseEntity<Device> setColor(@RequestBody DeviceColor colorRequest) {
         Device d = new Device("PiZero", 18, 255, 99);
-
+        d.setColor(colorRequest);
         return ResponseEntity.ok(d);
     }
 
