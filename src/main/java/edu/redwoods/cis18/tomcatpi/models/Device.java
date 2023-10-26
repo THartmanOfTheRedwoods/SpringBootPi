@@ -5,59 +5,86 @@ import com.diozero.ws281xj.PixelAnimations;
 import com.diozero.ws281xj.PixelColour;
 import com.diozero.ws281xj.rpiws281x.WS281x;
 import com.fasterxml.jackson.annotation.JsonProperty;
+// Logging imports
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Device {
+    private static final Logger logger = LoggerFactory.getLogger(Device.class);
     @JsonProperty("deviceName")
     private String deviceName;
     @JsonProperty("gpioNum")
-    private int gpioNum;
+    private final int gpioNum;
     @JsonProperty("brightness")
     private int brightness;
     @JsonProperty("pixels")
-    private int pixels;
+    private final int pixels;
 
-    //@TODO Consider adding a property or method that defines/returns the current state
-    //    (i.e. an array of pxels and Hex color);
+    // @TODO: Make this state part of an ENUM of possible states rather than a string.
+    @JsonProperty("state")
+    private String state;
 
-    private LedDriverInterface ledDriver;
+    //@TODO Consider adding a property or method that defines/returns the current status of each pixel
+    //    (i.e. an array of pixels and Hex color);
+
+    private final LedDriverInterface ledDriver;
 
     public Device(String deviceName, int gpioNum, int brightness, int pixels) {
         this.deviceName = deviceName;
         this.gpioNum = gpioNum;
         this.brightness = brightness;
         this.pixels = pixels;
-        ledDriver = new WS281x(gpioNum, brightness, pixels);
+        ledDriver = getLedDriver();
+    }
+
+    public LedDriverInterface getLedDriver() {
+        if(ledDriver == null) {
+            try {
+                return new WS281x(gpioNum, brightness, pixels);
+            } catch(java.lang.RuntimeException e) {
+                // Catch the error where we don't have a native library for our arch
+                this.state = e.getMessage();
+                logger.error(e.getMessage());
+            }
+        }
+        return ledDriver;
     }
 
     public void setColor(DeviceColor color) {
-        System.out.printf("Setting color to: %d %d %d%nHex: %s%n",
-                color.getRed(), color.getGreen(), color.getBlue(), color.getHexString());
-        for (int pixel=0; pixel<ledDriver.getNumPixels(); pixel++) {
-            ledDriver.setPixelColour(pixel, color.getHexInt());
+        logger.debug(String.format("Setting color to: %d %d %d%nHex: %s%n",
+                color.getRed(), color.getGreen(), color.getBlue(), color.getHexString())
+        );
+        if(ledDriver != null) { // No point in trying to manipulate the physical device if it was never loaded.
+            for (int pixel = 0; pixel < ledDriver.getNumPixels(); pixel++) {
+                ledDriver.setPixelColour(pixel, color.getHexInt());
+            }
+            ledDriver.render();
         }
-        ledDriver.render();
-        /*
-         */
     }
 
     public void rainbowColors() throws Throwable {
-        int[] colors = PixelColour.RAINBOW;
-
-        for (int i=0; i<250; i++) {
-            for (int pixel=0; pixel<ledDriver.getNumPixels(); pixel++) {
-                ledDriver.setPixelColour(pixel, colors[(i+pixel) % colors.length]);
+        if(ledDriver != null) { // No point in trying to manipulate the physical device if it was never loaded.
+            int[] colors = PixelColour.RAINBOW;
+            for (int i = 0; i < 250; i++) {
+                for (int pixel = 0; pixel < ledDriver.getNumPixels(); pixel++) {
+                    ledDriver.setPixelColour(pixel, colors[(i + pixel) % colors.length]);
+                }
+                ledDriver.render();
+                PixelAnimations.delay(50);
             }
-            ledDriver.render();
-            PixelAnimations.delay(50);
         }
     }
 
     public void animations() throws Throwable {
-        PixelAnimations.demo(ledDriver);
+        if(ledDriver != null) { // No point in trying to manipulate the physical device if it was never loaded.
+            PixelAnimations.demo(ledDriver);
+        }
     }
 
     public void allOff() throws Throwable {
-        ledDriver.allOff();
+        if(ledDriver != null) { // No point in trying to manipulate the physical device if it was never loaded.
+            ledDriver.allOff();
+        }
     }
 
     @Override
@@ -69,5 +96,15 @@ public class Device {
                   Brightness: %d
                   Pixels: %d
                   Status: success }""", deviceName, gpioNum, brightness, pixels);
+    }
+
+    public String getState() {
+        // @TODO: Change when I change state
+        return state;
+    }
+
+    public void setState(String state) {
+        // @TODO: Change when I change state
+        this.state = state;
     }
 }
