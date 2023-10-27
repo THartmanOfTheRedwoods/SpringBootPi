@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore Java Keystore files
+*.p12
+*.keystore
