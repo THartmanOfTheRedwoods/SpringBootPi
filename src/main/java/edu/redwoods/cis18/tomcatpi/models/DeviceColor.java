@@ -5,6 +5,13 @@ public class DeviceColor {
     private int green;
     private int blue;
 
+    public DeviceColor() {}
+    public DeviceColor(int red, int green, int blue) {
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+    }
+
     public int getRed() {
         return red;
     }
@@ -46,7 +53,7 @@ public class DeviceColor {
         hexBlue = hexBlue.length() == 1 ? "0" + hexBlue : hexBlue;
 
         // Concatenate the components to form the hexadecimal RGB value as a string
-        return "#" + hexRed + hexGreen + hexBlue;
+        return "#" + hexRed + hexBlue + hexGreen;
     }
 
     public int getHexInt() {
